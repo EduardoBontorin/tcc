@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano TCC — Visão Computacional em Esteira</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f7f7f5;
+    --bg3: #f0efeb;
+    --text: #1a1a1a;
+    --text2: #6b6b6b;
+    --text3: #9b9b9b;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --purple: #7F77DD;
+    --purple-bg: #EEEDFE;
+    --teal: #1D9E75;
+    --teal-bg: #E1F5EE;
+    --coral: #D85A30;
+    --coral-bg: #FAECE7;
+    --gray: #888780;
+    --gray-bg: #F1EFE8;
+    --blue: #185FA5;
+    --blue-text: #185FA5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1c;
+      --bg2: #252525;
+      --bg3: #2e2e2e;
+      --text: #e8e8e8;
+      --text2: #a0a0a0;
+      --text3: #666;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.18);
+      --purple: #AFA9EC;
+      --purple-bg: #26215C;
+      --teal: #5DCAA5;
+      --teal-bg: #04342C;
+      --coral: #F0997B;
+      --coral-bg: #4A1B0C;
+      --gray: #B4B2A9;
+      --gray-bg: #2C2C2A;
+      --blue: #85B7EB;
+      --blue-text: #85B7EB;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); line-height: 1.6; }
+  .page { max-width: 820px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: var(--text2); margin-bottom: 24px; }
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .filter-btn { padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--border2); background: var(--bg); font-size: 13px; cursor: pointer; color: var(--text2); transition: all .15s; }
+  .filter-btn:hover { background: var(--bg2); }
+  .filter-btn.active { font-weight: 600; color: #fff; border-color: transparent; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .stat-card { border-radius: var(--radius); padding: 10px 14px; }
+  .stat-label { font-size: 11px; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; font-weight: 500; }
+  .stat-val { font-size: 20px; font-weight: 600; }
+  .progress-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+  .pbar { height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; margin-bottom: 24px; }
+  .pfill { height: 100%; border-radius: 3px; background: var(--teal); transition: width .4s; }
+  .month-div { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 16px 0 8px; border-bottom: 1px solid var(--border); margin-bottom: 10px; color: var(--text2); }
+  .week-card { border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 10px; background: var(--bg); overflow: hidden; }
+  .week-hdr { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; user-select: none; transition: background .12s; }
+  .week-hdr:hover { background: var(--bg2); }
+  .wnum { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .winfo { flex: 1; min-width: 0; }
+  .wtitle { font-size: 14px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wsub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .chev { font-size: 11px; color: var(--text3); transition: transform .2s; flex-shrink: 0; }
+  .chev.open { transform: rotate(90deg); }
+  .wbody { display: none; padding: 0 16px 16px; }
+  .wbody.open { display: block; }
+  .sync-box { margin-top: 14px; padding: 10px 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg2); }
+  .sync-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); margin-bottom: 5px; }
+  .sync-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .person-block { margin-top: 14px; }
+  .person-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .person-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .person-name { font-size: 13px; font-weight: 600; }
+  .task-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; padding-left: 18px; }
+  .task-dash { font-size: 13px; color: var(--text3); margin-top: 1px; flex-shrink: 0; }
+  .task-body { flex: 1; }
+  .task-main { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .task-link { font-size: 13px; color: var(--blue-text); text-decoration: none; line-height: 1.4; }
+  .task-link:hover { text-decoration: underline; }
+  .task-note { font-size: 12px; color: var(--text2); margin-top: 3px; line-height: 1.5; }
+  .done-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .done-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; padding: 6px 12px; border-radius: var(--radius); border: 1px solid var(--border2); background: transparent; color: var(--text2); font-family: inherit; transition: all .12s; }
+  .done-btn:hover { background: var(--bg2); }
+  .done-btn.on { font-weight: 600; }
+  .cb { width: 13px; height: 13px; border-radius: 3px; border: 2px solid currentColor; flex-shrink: 0; }
+  @media (max-width: 500px) {
+    .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stat-val { font-size: 16px; }
+    .wtitle { font-size: 13px; }
+    .filter-btn { font-size: 12px; padding: 5px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Plano TCC — Visão Computacional em Esteira</h1>
+  <p class="subtitle">12 semanas · Eduardo, Tiago e Aline · Primeira entrega: revisão bibliográfica e metodologia</p>
+
+  <div class="filter-bar" id="filters"></div>
+  <div class="stats" id="stats"></div>
+  <div class="progress-row">
+    <span style="color:var(--text2)">progresso geral do grupo</span>
+    <span id="pct" style="font-weight:600">0%</span>
+  </div>
+  <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
+  <div id="content"></div>
+</div>
+
+<script>
+const P={
+  E:{id:'E',name:'Eduardo',role:'técnico principal',color:'#7F77DD',bg:'var(--purple-bg)'},
+  T:{id:'T',name:'Tiago',role:'hardware + metodologia',color:'#1D9E75',bg:'var(--teal-bg)'},
+  A:{id:'A',name:'Aline',role:'redação + referências',color:'#D85A30',bg:'var(--coral-bg)'}
+};
+
+const weeks=[
+  {n:1,month:1,title:'Intuição de redes neurais',sub:'Fundamentos visuais — sem artigos ainda',
+  sync:'Reunião inicial: criar pasta no Drive, configurar Zotero em grupo, definir estrutura do documento no Google Docs com seções e responsáveis.',
+  tasks:{
+    E:[
+      {text:'3Blue1Brown — playlist Neural Networks',url:'https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi',note:'~1h. Foco na intuição visual — o que é um neurônio, camada, como a rede aprende.'},
+      {text:'Vídeo: What is a CNN? — Computerphile',url:'https://www.youtube.com/watch?v=py5byOOHZM8',note:'20 min. Visualização de filtros e feature maps.'}
+    ],
+    T:[
+      {text:'fast.ai Lesson 1 — treinar um modelo do zero',url:'https://course.fast.ai/Lessons/lesson1.html',note:'O objetivo não é entender tudo — é ver o ciclo completo funcionando uma vez.'},
+      {text:'Pesquisa: câmeras Hikvision IP para visão industrial',note:'Modelos com RTSP, resolução ≥ 2MP, FPS ≥ 25. Comparar séries DS-2CD. Verificar suporte à API ISAPI ou SDK Hikvision.'},
+      {text:'Pesquisa: NVR Hikvision — integração e acesso a streams',note:'Verificar modelos com SDK ou API REST. Isso é o que vai conectar ao pipeline de inferência.'}
+    ],
+    A:[
+      {text:'Configurar Zotero e criar biblioteca compartilhada',url:'https://www.zotero.org/',note:'Tutorial de setup em grupo: 15 min no YouTube. Exporta ABNT automaticamente.'},
+      {text:'Montar estrutura do documento no Google Docs',note:'Seções: Introdução, Revisão Bibliográfica, Metodologia Proposta, Referências — com responsável em cada seção.'},
+      {text:'Pesquisa: Indústria 4.0 no Brasil — dados de mercado',note:'Fontes: CNI, ABDI, SEBRAE. Meta: 2 parágrafos de contextualização com dados concretos.'}
+    ]
+  }},
+  {n:2,month:1,title:'Vocabulário de detecção de objetos',sub:'IoU, mAP, bounding box, precision/recall',
+  sync:'Eduardo explica CNNs em 15 min. Tiago apresenta levantamento de câmeras e NVR. Aline apresenta rascunho de contextualização para feedback.',
+  tasks:{
+    E:[
+      {text:'IoU e mAP explicados',url:'https://towardsdatascience.com/breaking-down-mean-average-precision-map-ae462f623a52',note:'~20 min. mAP aparece em TODOS os artigos — entender aqui economiza horas depois.'},
+      {text:'Vídeo: What is Object Detection? — Computerphile',url:'https://www.youtube.com/watch?v=5e5pjeojznk',note:'Diferença entre classificação, detecção e segmentação.'},
+      {text:'fast.ai Lesson 1',url:'https://course.fast.ai/Lessons/lesson1.html',note:'Ciclo completo de treinamento — base prática para as próximas semanas.'}
+    ],
+    T:[
+      {text:'Tabela comparativa de câmeras Hikvision para o projeto',note:'Formato: Modelo | Resolução | FPS | Compressão | API disponível | Preço estimado. Foco em RTSP estável e baixa latência.'},
+      {text:'Investigar: latência RTSP em câmeras Hikvision',note:'Latência típica é 200–500ms. Documentar como limitação no trabalho.'},
+      {text:'Pesquisa: Indústria 4.0 — anotações para a Aline',note:'1 página de anotações sobre automação industrial para alimentar a seção de contextualização.'}
+    ],
+    A:[
+      {text:'Rascunho: contextualização do problema (1–2 páginas)',note:'Tema: automação industrial, desafios de inspeção em esteiras, relevância econômica. Com base nas anotações do Tiago.'},
+      {text:'Adicionar ao Zotero os artigos do roteiro (semanas 3 e 4)',note:'Eduardo fornece a lista. Aline insere com metadados corretos (DOI, journal, ano).'}
+    ]
+  }},
+  {n:3,month:1,title:'Artigos fundacionais — parte 1',sub:'Faster R-CNN e YOLO v1',
+  sync:'Eduardo apresenta diferença R-CNN vs YOLO (15 min). Tiago apresenta tabela de câmeras para decisão do grupo.',
+  tasks:{
+    E:[
+      {text:'Vídeo: anchor boxes — Andrew Ng',url:'https://www.youtube.com/watch?v=GSwYGkTfOKk',note:'10 min. Sem isso Faster R-CNN e SSD ficam opacos.'},
+      {text:'Faster R-CNN (Ren et al., NeurIPS 2015)',url:'https://arxiv.org/abs/1506.01497',note:'Foque: Abstract, Introdução, seção 3 (RPN) e Conclusão.'},
+      {text:'YOLO v1 (Redmon et al., CVPR 2016)',url:'https://arxiv.org/abs/1506.02640',note:'Abstract + seção 2 (Unified Detection) + Resultados.'}
+    ],
+    T:[
+      {text:'Pesquisa: câmeras IP em pipelines de visão computacional',note:'Protocolos: RTSP, ONVIF, ISAPI Hikvision. Como capturar frames via Python (cv2.VideoCapture com URL RTSP). Documentar limitações.'},
+      {text:'Ler: Inspeção de corpos estranhos em esteira — WEG',url:'https://www.weg.net/digital/blog/inspecao-de-corpos-estranhos-em-esteira-transportadora-com-visao-computacional/',note:'Caso real brasileiro. Anote: problema, solução, hardware, resultados.'},
+      {text:'Pesquisa: NVR como fonte de dataset',note:'Fluxo: NVR grava → exporta frames → anotação → treinamento. Verificar como exportar vídeos/frames do NVR Hikvision.'}
+    ],
+    A:[
+      {text:'Pesquisa no Catálogo CAPES',url:'https://catalogodeteses.capes.gov.br/',note:'Busca: "visão computacional esteira", "detecção objetos industrial". Meta: identificar 3–5 dissertações relevantes.'},
+      {text:'Pesquisa na BDTD',url:'https://bdtd.ibict.br/',note:'Complementar ao CAPES. Filtrar por: Engenharia Elétrica, Ciência da Computação.'}
+    ]
+  }},
+  {n:4,month:1,title:'Artigos fundacionais — parte 2',sub:'SSD, EfficientDet e evolução YOLO v5 ao v11',
+  sync:'Eduardo apresenta tabela comparativa das arquiteturas. Decisão: confirmar câmera Hikvision IP + NVR e registrar no documento.',
+  tasks:{
+    E:[
+      {text:'SSD: Single Shot MultiBox Detector (Liu et al., ECCV 2016)',url:'https://arxiv.org/abs/1512.02325',note:'Abstract + Figura 1 — explica a arquitetura inteira visualmente.'},
+      {text:'EfficientDet (Tan, Pang, Le — CVPR 2020)',url:'https://arxiv.org/abs/1911.09070',note:'Abstract + Tabela 1 + Conclusão. Eficiência vs. acurácia para edge computing.'},
+      {text:'YOLO Evolution: v5 ao v11 (arXiv 2025)',url:'https://arxiv.org/abs/2510.09653',note:'Leia como review — tabelas de comparação. Define qual versão usar no projeto.'}
+    ],
+    T:[
+      {text:'Finalizar tabela comparativa de hardware do projeto',note:'Câmera Hikvision escolhida + NVR + plataforma de inferência. Incluir custo estimado — argumento de viabilidade econômica.'},
+      {text:'fast.ai Lesson 2 — deploy em produção',url:'https://course.fast.ai/Lessons/lesson2.html',note:'Contexto de como modelos chegam a ambientes reais.'},
+      {text:'Investigar: sincronização de múltiplos streams RTSP sem hardware trigger',note:'Limitação real que precisa aparecer no trabalho — documentar estratégias de mitigação.'}
+    ],
+    A:[
+      {text:'Fichamento das dissertações encontradas no CAPES/BDTD',note:'1 parágrafo por trabalho: problema, método, resultado, relevância para o TCC.'},
+      {text:'Rascunho: motivação econômica e relevância industrial',note:'Dados de mercado de automação no Brasil + citações das dissertações nacionais.'}
+    ]
+  }},
+  {n:5,month:2,title:'Surveys de inspeção industrial',sub:'Visão panorâmica — leitura mais densa',
+  sync:'Alinhamento: o documento deve ter introdução e contextualização com rascunho. Definir quais seções da revisão bibliográfica cada um vai redigir.',
+  tasks:{
+    E:[
+      {text:'Survey 196 publicações open-access (MDPI 2024)',url:'https://www.mdpi.com/2571-5577/7/1/11',note:'Abstract, seção 2, tabelas de resultado e conclusão. ~1h.'},
+      {text:'Survey sistemática — detecção de defeitos (AI Review 2024)',url:'https://link.springer.com/article/10.1007/s10462-024-10956-3',note:'Foque nas tabelas comparativas de algoritmos e datasets.'},
+      {text:'AI-enabled defect detection (AEI 2025)',url:'https://www.sciencedirect.com/science/article/pii/S1474034625009607',note:'Seção de desafios e direções futuras — onde está a lacuna que o TCC preenche.'}
+    ],
+    T:[
+      {text:'Ler: detecção de SMD em esteira — YOLOv4 em Jetson Nano (MDPI 2022)',url:'https://www.mdpi.com/2076-3417/12/11/5608',note:'Mais acessível tecnicamente. Anote: hardware, FPS, acurácia, limitações.'},
+      {text:'Pesquisa: plataformas de inferência para streams RTSP',note:'PC com GPU vs Jetson Nano vs servidor. Considerar latência RTSP das câmeras Hikvision.'}
+    ],
+    A:[
+      {text:'Formatar referências (semanas 1–4) no Zotero em ABNT',note:'Verificar: autor, ano, título, fonte, DOI. Corrigir entradas incompletas.'},
+      {text:'Rascunho introdução — versão 1 completa',note:'Estrutura: contexto → problema → lacuna → proposta → objetivos.'}
+    ]
+  }},
+  {n:6,month:2,title:'Detecção em esteiras — artigos aplicados',sub:'Trabalhos mais próximos do cenário do projeto',
+  sync:'Eduardo apresenta tabela comparativa dos artigos lidos (arquitetura, dataset, mAP, hardware). Vai direto para a revisão bibliográfica.',
+  tasks:{
+    E:[
+      {text:'Contagem com YOLOv11 em esteira (Springer 2026)',url:'https://link.springer.com/chapter/10.1007/978-3-032-21625-0_24',note:'Estado da arte mais recente. 85,1% acurácia sob 50–70% de oclusão.'},
+      {text:'YOLO-STOD para correias (Sci. Reports 2024)',url:'https://www.nature.com/articles/s41598-024-83619-6',note:'Exemplo de YOLO customizado para esteira — como adaptar para domínio específico.'},
+      {text:'Faster R-CNN para defeitos em aço (Sci. Reports 2025)',url:'https://www.nature.com/articles/s41598-025-12740-x',note:'Representante R-CNN — comparar com YOLO e justificar a escolha de arquitetura.'},
+      {text:'Montar tabela comparativa de todos os artigos lidos até agora',note:'Autores | Ano | Arquitetura | Dataset | mAP | Hardware | Tipo de câmera.'}
+    ],
+    T:[
+      {text:'Smart surface inspection — Faster R-CNN em cloud-edge (AEI 2020)',url:'https://www.sciencedirect.com/science/article/abs/pii/S1474034620300069',note:'Foco na integração do sistema — como conectar visão computacional a software de chão de fábrica.'},
+      {text:'Rascunho inicial da metodologia: hardware e arquitetura do sistema',note:'Diagrama: câmeras Hikvision → NVR → captura RTSP → pré-processamento → YOLO → saída.'},
+      {text:'Redigir: justificativa da escolha de hardware acessível',note:'Argumento de low-cost deployment — câmeras CFTV vs câmeras GigE Vision industriais. Incluir comparativo de custo.'}
+    ],
+    A:[
+      {text:'Revisão e polimento da introdução — versão 2',note:'Incorporar feedback da reunião da semana 5. A lacuna na literatura deve estar explícita.'},
+      {text:'Rascunho revisão bibliográfica: visão computacional industrial (parte 1)',note:'Com base na tabela comparativa do Eduardo. Redige em prosa, agrupando por abordagem técnica.'}
+    ]
+  }},
+  {n:7,month:2,title:'Sistemas multicâmera industriais',sub:'O diferencial técnico do projeto',
+  sync:'Decisão sobre quantidade e posicionamento das câmeras — Eduardo e Tiago chegam com proposta, grupo valida. Registrar no documento.',
+  tasks:{
+    E:[
+      {text:'Review MCMOT — 30 algoritmos (Neurocomputing 2023)',url:'https://www.sciencedirect.com/science/article/pii/S0925231223006811',note:'Abstract, taxonomia de métodos, tabela de benchmarks. Mapa do território multicâmera.'},
+      {text:'100.000 pacotes/dia com Mask R-CNN + Siamese (GCPR 2018)',url:'https://link.springer.com/chapter/10.1007/978-3-030-12939-2_7',note:'Leia completo — mais próximo do cenário industrial real em escala.'},
+      {text:'Fusão multiview +15% mAP (arXiv 2023)',url:'https://arxiv.org/abs/2304.08111',note:'Justificativa quantitativa para múltiplas câmeras. Cite na introdução.'}
+    ],
+    T:[
+      {text:'Sistema pioneiro 4 câmeras em esteira (Springer 2005)',url:'https://link.springer.com/chapter/10.1007/11569596_73',note:'Leitura histórica rápida — introdução e conclusão. Mostra evolução do campo.'},
+      {text:'Detalhar metodologia: posicionamento das câmeras Hikvision',note:'Ângulos, distâncias, sobreposição de FOV, sincronização de streams sem hardware trigger.'},
+      {text:'Investigar: acesso simultâneo a múltiplos streams via NVR Hikvision',note:'O NVR pode fornecer endpoint unificado com múltiplos canais? Isso simplifica a arquitetura.'}
+    ],
+    A:[
+      {text:'Rascunho revisão bibliográfica: sistemas multicâmera',note:'Eduardo fornece rascunho técnico cru. Aline transforma em texto fluido e coeso.'},
+      {text:'Pesquisa: dados sobre perdas por falha de inspeção na indústria',note:'Números concretos justificam a relevância. Fontes: relatórios CNI, artigos de qualidade industrial.'}
+    ]
+  }},
+  {n:8,month:2,title:'Transfer learning e data augmentation',sub:'Primeiros artigos sobre aprendizado com poucos dados',
+  sync:'Eduardo apresenta esboço das escolhas técnicas: qual YOLO, como será a augmentation, como o dataset será formado via NVR. Tiago complementa com hardware.',
+  tasks:{
+    E:[
+      {text:'Transfer learning com VGG/ResNet/Inception (ScienceDirect 2023)',url:'https://www.sciencedirect.com/science/article/pii/S221282712300820X',note:'Leia completo — acessível e diretamente aplicável. Tabela de comparação de backbones é essencial.'},
+      {text:'Augmentation para inspeção industrial (J. Intelligent Manufacturing 2021)',url:'https://link.springer.com/article/10.1007/s10845-021-01738-7',note:'Anote as técnicas e os ganhos de mAP de cada uma.'},
+      {text:'fast.ai Lesson 5 — transfer learning aprofundado',url:'https://course.fast.ai/Lessons/lesson5.html',note:'Leia depois dos artigos. Contexto prático de fine-tuning.'}
+    ],
+    T:[
+      {text:'Finalizar diagrama detalhado do sistema',note:'Câmeras Hikvision → NVR → captura RTSP (Python/OpenCV) → pré-processamento → YOLO → saída. Usar draw.io ou Figma.'},
+      {text:'Pesquisa: ferramentas de anotação de imagens',note:'Roboflow, Label Studio, CVAT — comparar e recomendar. O NVR fornece os frames brutos para anotação.'},
+      {text:'Redigir: uso do NVR como fonte de dataset',note:'Fluxo: NVR grava → exporta frames → anotação → treinamento. Vai para a seção de metodologia.'}
+    ],
+    A:[
+      {text:'Polimento da introdução — versão final',note:'Após este ponto a introdução não deve mais mudar estruturalmente.'},
+      {text:'Rascunho revisão bibliográfica: transfer learning e data augmentation',note:'Com base nos artigos do Eduardo. Prosa coesa, sem jargão desnecessário.'}
+    ]
+  }},
+  {n:9,month:3,title:'Dados sintéticos, GANs e few-shot learning',sub:'Fronteira técnica do problema de poucos dados',
+  sync:'Revisão conjunta da metodologia proposta — cada um lê e comenta no Google Docs antes da reunião. Pergunta central: a proposta está clara para quem não é especialista?',
+  tasks:{
+    E:[
+      {text:'GAN para augmentation em inspeção (IFAC 2023)',url:'https://www.sciencedirect.com/science/article/pii/S2405896323011941',note:'Metodologia aplicável. Seção experimental rica em detalhes de implementação.'},
+      {text:'Domain randomization sim-to-real (arXiv 2022)',url:'https://arxiv.org/abs/2208.04171',note:'86% mAP zero-shot. Argumento mais forte para dados sintéticos.'},
+      {text:'Few-shot learning industrial (Int. J. Production Research 2024)',url:'https://www.tandfonline.com/doi/full/10.1080/00207543.2024.2316279',note:'5-shot supera 1-shot significativamente — define o mínimo de amostras no experimento.'},
+      {text:'XDNet — meta-learning cross-domain (IEEE 2023)',url:'https://ieeexplore.ieee.org/document/10208767/',note:'Estado da arte em few-shot industrial. Abstract + problema motivador + resultados.'}
+    ],
+    T:[
+      {text:'Revisar metodologia com justificativa técnica de hardware',note:'Por que Hikvision IP? Quais as limitações (latência RTSP, H.264) e como são mitigadas? Por que NVR?'},
+      {text:'Pesquisa: compressão H.264 e impacto em detecção de objetos',note:'Quantificar perda de mAP com streams comprimidos vs câmeras industriais sem compressão. Fortifica seção de limitações.'}
+    ],
+    A:[
+      {text:'Rascunho revisão bibliográfica: dados sintéticos e few-shot learning',note:'Eduardo fornece rascunho cru, Aline polirá.'},
+      {text:'Revisão da coesão geral do documento',note:'Fio narrativo: problema → estado da arte → lacuna → proposta. Verificar se está claro em todas as seções.'}
+    ]
+  }},
+  {n:10,month:3,title:'Datasets e contexto nacional',sub:'MVTec AD + trabalhos brasileiros + decisão final de dataset',
+  sync:'Leitura cruzada: cada um lê a seção do outro e deixa comentários no Google Docs. Foco: o que está confuso, o que está faltando.',
+  tasks:{
+    E:[
+      {text:'MVTec AD dataset (Int. J. Computer Vision 2021)',url:'https://link.springer.com/article/10.1007/s11263-020-01400-4',note:'Abstract + categorias + métricas. Benchmark padrão da área — precisa conhecer.'},
+      {text:'Framework multicâmera com dataset próprio (SpringerOpen 2024)',url:'https://jivp-eurasipjournals.springeropen.com/articles/10.1186/s13640-024-00623-6',note:'Metodologia de criação de dataset — relevante pois o grupo vai criar o seu via NVR.'},
+      {text:'Escrever rascunho das seções técnicas densas da revisão',note:'Deep learning, arquiteturas (YOLO/R-CNN), multicâmera, poucos dados. Rascunho cru — Aline polirá.'}
+    ],
+    T:[
+      {text:'Decisão final sobre ferramenta de anotação',note:'Qual ferramenta o grupo vai usar para anotar os frames do NVR? Justificar na metodologia.'},
+      {text:'Revisar toda a seção de metodologia proposta',note:'Verificar coerência técnica. O diagrama do sistema está correto e legível?'}
+    ],
+    A:[
+      {text:'Integrar todos os rascunhos da revisão em versão coesa',note:'Garantir que as seções fluem naturalmente, sem repetições e com transições claras.'},
+      {text:'Formatar referências (semanas 5–10) no Zotero em ABNT',note:'Verificar DOIs, nomes de journals, páginas em artigos de conferência.'}
+    ]
+  }},
+  {n:11,month:3,title:'Integração e escrita final',sub:'Todas as seções se juntam em um documento coeso',
+  sync:'Reunião mais longa da fase (1h). Leitura completa do documento em voz alta — ajuda a pegar inconsistências que a leitura silenciosa não pega.',
+  tasks:{
+    E:[
+      {text:'Revisão técnica completa do documento',note:'Toda afirmação técnica está correta? Toda métrica tem fonte? As escolhas (YOLO, Hikvision, NVR, augmentation) estão bem justificadas?'},
+      {text:'Escrever seção de objetivos gerais e específicos',note:'1 objetivo geral + 3–5 objetivos específicos com verbos de ação (desenvolver, avaliar, comparar, implementar).'}
+    ],
+    T:[
+      {text:'Criar figuras e diagramas finais',note:'Diagrama do sistema em blocos, fluxo de processamento, posicionamento das câmeras. draw.io ou Figma — exportar em alta resolução.'},
+      {text:'Revisar seção de metodologia — versão final',note:'Após esta semana a metodologia não deve mais mudar.'}
+    ],
+    A:[
+      {text:'Integração final do documento',note:'Capa, sumário, listas de figuras e tabelas, numeração de páginas, espaçamento ABNT.'},
+      {text:'Revisão de escrita completa',note:'Coesão entre seções, eliminação de jargão sem definição, clareza para a banca.'}
+    ]
+  }},
+  {n:12,month:3,title:'Revisão final e entrega',sub:'Últimos ajustes e submissão',
+  sync:'Revisão final conjunta. Submeter com pelo menos 1 dia de antecedência ao orientador.',
+  tasks:{
+    E:[
+      {text:'Última revisão técnica de precisão',note:'Nomes de arquiteturas, siglas, métricas e citações nas seções técnicas.'},
+      {text:'Verificar se a contribuição está clara',note:'O leitor consegue responder: o que esse trabalho fez que outros não fizeram? (low-cost + multicâmera + poucos dados)'}
+    ],
+    T:[
+      {text:'Revisão final das figuras e diagramas',note:'Legenda, resolução, fonte citada se adaptado, tamanho de fonte visível.'},
+      {text:'Testar todos os links das referências eletrônicas',note:'Links arXiv, MDPI, Springer — verificar se estão acessíveis e corretos.'}
+    ],
+    A:[
+      {text:'Revisão ortográfica e gramatical final',note:'Corretor automático + leitura em voz alta para parágrafos densos.'},
+      {text:'Exportar PDF final e verificar formatação',note:'Sumário com links funcionando, figuras não distorcidas, quebras de página corretas.'},
+      {text:'Submissão ao orientador',note:'E-mail formal resumindo o que foi entregue e perguntando sobre próximos passos para a parte 2.'}
+    ]
+  }}
+];
+
+const monthNames={1:'mês 1 — fundamentos',2:'mês 2 — aprofundamento',3:'mês 3 — escrita e entrega'};
+const STORAGE_KEY='tcc-plano-done-v1';
+let filter='all',openWeek=1;
+let done=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(done));}
+function totalDone(){return Object.keys(done).filter(k=>done[k]&&k.endsWith('-all')).length;}
+function personDone(pid){return Object.keys(done).filter(k=>done[k]&&k.endsWith('-'+pid)&&!k.endsWith('-all')).length;}
+function personWeeks(pid){return weeks.filter(w=>w.tasks[pid]&&w.tasks[pid].length>0).length;}
+
+function renderFilters(){
+  const c=document.getElementById('filters');c.innerHTML='';
+  [{id:'all',name:'todos',color:'#888780'},...Object.values(P)].forEach(p=>{
+    const b=document.createElement('button');
+    b.className='filter-btn'+(filter===p.id?' active':'');
+    b.textContent=p.id==='all'?'todos':p.name+(p.role?' · '+p.role:'');
+    if(filter===p.id){b.style.background=p.color;b.style.borderColor=p.color;}
+    b.addEventListener('click',()=>{filter=p.id;render();});
+    c.appendChild(b);
+  });
+}
+
+function renderStats(){
+  const c=document.getElementById('stats');c.innerHTML='';
+  Object.values(P).forEach(p=>{
+    const d=document.createElement('div');
+    d.className='stat-card';
+    d.style.background=p.id==='E'?'var(--purple-bg)':p.id==='T'?'var(--teal-bg)':'var(--coral-bg)';
+    d.innerHTML=`<div class="stat-label" style="color:${p.color}">${p.name}</div><div class="stat-val" style="color:${p.color}">${personDone(p.id)} / ${personWeeks(p.id)}</div>`;
+    c.appendChild(d);
+  });
+  const t=totalDone();
+  document.getElementById('pct').textContent=Math.round(t/12*100)+'%';
+  document.getElementById('pfill').style.width=Math.round(t/12*100)+'%';
+}
+
+function render(){
+  renderFilters();renderStats();
+  const c=document.getElementById('content');c.innerHTML='';
+  let lastMonth=0;
+  weeks.forEach(w=>{
+    const vis=filter==='all'?Object.keys(P):[filter];
+    if(!vis.some(p=>w.tasks[p]&&w.tasks[p].length))return;
+    if(w.month!==lastMonth){
+      const d=document.createElement('div');d.className='month-div';d.textContent=monthNames[w.month];c.appendChild(d);lastMonth=w.month;
+    }
+    const card=document.createElement('div');card.className='week-card';
+    const isOpen=openWeek===w.n,allDone=done[w.n+'-all'];
+    const hdr=document.createElement('div');hdr.className='week-hdr';
+    hdr.innerHTML=`
+      <div class="wnum" style="background:${allDone?'var(--teal-bg)':'var(--gray-bg)'};color:${allDone?'var(--teal)':'var(--gray)'}">${allDone?'&#10003;':w.n}</div>
+      <div class="winfo">
+        <div class="wtitle" style="${allDone?'text-decoration:line-through;opacity:.5':''}">${w.title}</div>
+        <div class="wsub">${w.sub}</div>
+      </div>
+      <span class="chev ${isOpen?'open':''}">&#9654;</span>`;
+    hdr.addEventListener('click',()=>{openWeek=openWeek===w.n?null:w.n;render();});
+    card.appendChild(hdr);
+    const body=document.createElement('div');body.className='wbody'+(isOpen?' open':'');
+    vis.forEach(pid=>{
+      const tasks=w.tasks[pid];if(!tasks||!tasks.length)return;
+      const p=P[pid];
+      const pb=document.createElement('div');pb.className='person-block';
+      const ph=document.createElement('div');ph.className='person-hdr';
+      ph.innerHTML=`<div class="person-dot" style="background:${p.color}"></div><span class="person-name" style="color:${p.color}">${p.name} <span style="font-weight:400;color:var(--text2)">— ${p.role}</span></span>`;
+      pb.appendChild(ph);
+      tasks.forEach(t=>{
+        const row=document.createElement('div');row.className='task-row';
+        const dash=document.createElement('div');dash.className='task-dash';dash.textContent='–';
+        const tb=document.createElement('div');tb.className='task-body';
+        if(t.url){tb.innerHTML=`<a class="task-link" href="${t.url}" target="_blank" rel="noopener">${t.text}</a>`;}
+        else{const tm=document.createElement('div');tm.className='task-main';tm.textContent=t.text;tb.appendChild(tm);}
+        if(t.note){const tn=document.createElement('div');tn.className='task-note';tn.textContent=t.note;tb.appendChild(tn);}
+        row.appendChild(dash);row.appendChild(tb);pb.appendChild(row);
+      });
+      body.appendChild(pb);
+    });
+    if(w.sync){
+      const sb=document.createElement('div');sb.className='sync-box';
+      sb.innerHTML=`<div class="sync-label">reunião semanal</div><div class="sync-text">${w.sync}</div>`;
+      body.appendChild(sb);
+    }
+    const dr=document.createElement('div');dr.className='done-row';
+    Object.values(P).forEach(p=>{
+      const k=w.n+'-'+p.id,on=done[k];
+      const btn=document.createElement('button');
+      btn.className='done-btn'+(on?' on':'');
+      if(on){btn.style.borderColor=p.color;btn.style.color=p.color;btn.style.background=p.id==='E'?'var(--purple-bg)':p.id==='T'?'var(--teal-bg)':'var(--coral-bg)';}
+      btn.innerHTML=`<div class="cb" style="border-color:${on?p.color:'currentColor'};background:${on?p.color:'transparent'}"></div> ${p.name}`;
+      btn.addEventListener('click',()=>{
+        done[k]=!done[k];
+        done[w.n+'-all']=Object.values(P).every(pp=>done[w.n+'-'+pp.id]);
+        save();render();
+      });
+      dr.appendChild(btn);
+    });
+    body.appendChild(dr);
+    card.appendChild(body);c.appendChild(card);
+  });
+}
+render();
+</script>
+</body>
+</html>
